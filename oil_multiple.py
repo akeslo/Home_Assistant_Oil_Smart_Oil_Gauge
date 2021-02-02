@@ -2,20 +2,22 @@ from selenium import webdriver
 import paho.mqtt.publish as publish
 import json
 from pyvirtualdisplay import Display
+from webdriver_manager.chrome import ChromeDriverManager
 
-display = Display(visible=0, size=(800, 600))
+display = Display(visible=0, size=(1440, 1024))
 display.start()
 
-browser = webdriver.Chrome()
+options = webdriver.ChromeOptions()
+options.add_argument('--headless')
 
-browser.set_window_size(1440, 900)
+browser = webdriver.Chrome(ChromeDriverManager().install(),options=options)
+browser.set_window_size(1440, 1024)
 
 user_name = "YOUR_SMART_OIL_USERNAME"
 password = "YOUR_SMART_OIL_PASSWORD"
 mqtt_server = "YOUR_MQTT_SERVER"
 mqtt_user = "YOUR_MQTT_USER"
 mqtt_password = "YOUR_MQTT_PASSWORD"
-
 
 browser.get("https://app.smartoilgauge.com/app.php")
 browser.find_element_by_id("inputUsername").send_keys(user_name)
@@ -30,14 +32,17 @@ current_fill_level = fill_level[0]
 current_fill_proportion = round((float(str(fill_level[0])) / float(str(fill_level[1]))) * 100, 1)
 battery_status = browser.find_element_by_xpath("//div[@class='ts_col ts_battery']//div[@class='ts_col_val']//p").get_attribute("innerHTML")
 days_to_low = browser.find_element_by_xpath("//div[@class='ts_col ts_days_to_low']//div[@class='ts_col_val']//p").get_attribute("innerHTML")
+max_fill = browser.find_element_by_xpath("//*[@id='tankSummary']/div[1]/div[4]/div[2]/p").get_attribute("innerHTML")
 
 print(current_fill_level)
 print(current_fill_proportion)
 print(battery_status)
 print(days_to_low)
+print(max_fill)
 
 msgs = [{"topic": "oilgauge/tanklevel", "payload": json.dumps({"current_fill_level": current_fill_level,
                                                                "current_fill_proportion": current_fill_proportion,
+                                                               "max_fill": max_fill,
                                                                "battery_status": battery_status,
                                                                "days_to_low": days_to_low }) }]
 browser.quit()
